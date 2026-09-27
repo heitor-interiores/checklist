@@ -1,12 +1,10 @@
 <!DOCTYPE html>
-<!-- persist-fix-v2 -->
-<html lang="pt-BR">
-<head>
+<html lang="pt-BR" data-theme="dark" style="color-scheme: dark;"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Checklist — Igreja Nova Aliança</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Raleway:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&amp;family=Raleway:wght@400;500&amp;display=swap" rel="stylesheet">
 <style>
   :root{
     --dark-green:#38573B; --light-green:#ACC1B0; --neutral:#D7D7CD;
@@ -126,19 +124,19 @@
         <input id="newDue" type="date" title="Prazo (opcional)">
         <button id="addBtn">Adicionar</button>
       </div>
-      <ul id="list"></ul>
-      <p id="banner" class="banner" hidden></p>
+      <ul id="list"><li class="item"><input type="checkbox"><div class="txt"><span>testes</span></div><button class="del" title="Remover">×</button></li></ul>
+      <p id="banner" class="banner" hidden=""></p>
     </section>
 
     <section class="prazos">
       <h2>Prazos</h2>
-      <ul id="prazosList"></ul>
+      <ul id="prazosList"><p class="empty">Nenhum item com prazo definido no momento.</p></ul>
     </section>
 
     <footer>Heitor Interiores</footer>
   </div>
 
-<script id="itemsData" type="application/json">[]</script>
+<script id="itemsData" type="application/json">[{"id":"i1790530720085yh713","text":"testes","done":false,"due":null}]</script>
 <script>
 (function(){
   var items = [];
@@ -315,5 +313,6 @@
   renderPrazos();
 })();
 </script>
-</body>
-</html>
+
+
+</body></html>
