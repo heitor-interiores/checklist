@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- persist-fix-v2 -->
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -280,19 +281,29 @@
     renderList();
   }
 
+  var errTimer = null;
+  function showTempError(){
+    var b = document.getElementById('banner');
+    b.hidden = false;
+    b.textContent = 'Não foi possível salvar agora. Verifique a conexão e tente de novo.';
+    clearTimeout(errTimer);
+    errTimer = setTimeout(function(){ if(writable){ b.hidden = true; } }, 4500);
+  }
+
   async function persist(){
     if(!writable) return;
     try{
-      var res = await fetch(location.href, { cache: 'no-store' });
-      var text = await res.text();
-      var marker = /(<script id="itemsData" type="application\/json">)([\s\S]*?)(<\/script>)/;
-      var newHtml = text.replace(marker, function(_, a, _b, c){ return a + JSON.stringify(items) + c; });
+      document.getElementById('itemsData').textContent = JSON.stringify(items);
+      var html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
       var ns = await window.claude.use('artifact');
       if(!ns){ setReadOnly(); return; }
-      await ns.publish(newHtml);
+      await ns.publish(html);
     }catch(e){
-      if(e && (e.code === 'not_writer' || e.code === 'not_granted' || e.code === 'consent_required')){
+      var code = e && e.code;
+      if(code === 'not_writer' || code === 'not_granted' || code === 'consent_required'){
         setReadOnly();
+      }else{
+        showTempError();
       }
     }
   }
