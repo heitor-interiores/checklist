@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-theme="dark" style="color-scheme: dark;"><head>
+<html lang="pt-BR">
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Checklist — Igreja Nova Aliança</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&amp;family=Raleway:wght@400;500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Raleway:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
     --dark-green:#38573B; --light-green:#ACC1B0; --neutral:#D7D7CD;
@@ -124,24 +125,38 @@
         <input id="newDue" type="date" title="Prazo (opcional)">
         <button id="addBtn">Adicionar</button>
       </div>
-      <ul id="list"><li class="item"><input type="checkbox"><div class="txt"><span>testes</span></div><button class="del" title="Remover">×</button></li></ul>
-      <p id="banner" class="banner" hidden=""></p>
+      <ul id="list"></ul>
+      <p id="banner" class="banner" hidden></p>
     </section>
 
     <section class="prazos">
       <h2>Prazos</h2>
-      <ul id="prazosList"><p class="empty">Nenhum item com prazo definido no momento.</p></ul>
+      <ul id="prazosList"></ul>
     </section>
 
     <footer>Heitor Interiores</footer>
   </div>
 
-<script id="itemsData" type="application/json">[{"id":"i1790530720085yh713","text":"testes","done":false,"due":null}]</script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script>
 (function(){
+  // ===== COLE AQUI a configuração copiada do Firebase (passo 5) =====
+  var firebaseConfig = {
+    apiKey: "AIzaSyDEKsDRas_W6d2HgT8Q5z_PdSrBENYVt80",
+    authDomain: "checklist-nova.firebaseapp.com",
+    projectId: "checklist-nova",
+    storageBucket: "checklist-nova.firebasestorage.app",
+    messagingSenderId: "994731165362",
+    appId: "1:994731165362:web:4a2cad6ed2be04a49d2bab"
+  };
+  // ====================================================================
+
+  firebase.initializeApp(firebaseConfig);
+  var db = firebase.firestore();
+  var docRef = db.collection('checklists').doc('igreja-nova-alianca');
+
   var items = [];
-  try{ items = JSON.parse(document.getElementById('itemsData').textContent) || []; }catch(e){ items = []; }
-  var writable = true;
 
   function renderList(){
     var ul = document.getElementById('list');
@@ -159,7 +174,6 @@
       var cb = document.createElement('input');
       cb.type = 'checkbox';
       cb.checked = !!it.done;
-      cb.disabled = !writable;
       cb.addEventListener('change', function(){ toggleItem(it.id); });
       var txt = document.createElement('div');
       txt.className = 'txt';
@@ -176,7 +190,6 @@
       del.className = 'del';
       del.textContent = '\u00D7';
       del.title = 'Remover';
-      del.disabled = !writable;
       del.addEventListener('click', function(){ deleteItem(it.id); });
       li.appendChild(cb); li.appendChild(txt); li.appendChild(del);
       ul.appendChild(li);
@@ -233,21 +246,29 @@
     });
   }
 
+  function showBanner(msg){
+    var b = document.getElementById('banner');
+    b.hidden = false;
+    b.textContent = msg;
+  }
+
+  function save(){
+    docRef.set({ items: items }).catch(function(e){
+      showBanner('Não foi possível salvar agora. Verifique a conexão e tente de novo.');
+    });
+  }
+
   function toggleItem(id){
     items = items.map(function(it){
       if(it.id === id){ return { id: it.id, text: it.text, done: !it.done, due: it.due || null }; }
       return it;
     });
-    renderList();
-    renderPrazos();
-    persist();
+    save();
   }
 
   function deleteItem(id){
     items = items.filter(function(it){ return it.id !== id; });
-    renderList();
-    renderPrazos();
-    persist();
+    save();
   }
 
   function addItem(){
@@ -262,57 +283,21 @@
     });
     input.value = '';
     dueInput.value = '';
-    renderList();
-    renderPrazos();
-    persist();
-  }
-
-  function setReadOnly(){
-    if(!writable) return;
-    writable = false;
-    var b = document.getElementById('banner');
-    b.hidden = false;
-    b.textContent = 'Modo somente leitura nesta visita — peça acesso de edição no link para marcar ou adicionar itens.';
-    document.getElementById('addBtn').disabled = true;
-    document.getElementById('newItem').disabled = true;
-    document.getElementById('newDue').disabled = true;
-    renderList();
-  }
-
-  var errTimer = null;
-  function showTempError(){
-    var b = document.getElementById('banner');
-    b.hidden = false;
-    b.textContent = 'Não foi possível salvar agora. Verifique a conexão e tente de novo.';
-    clearTimeout(errTimer);
-    errTimer = setTimeout(function(){ if(writable){ b.hidden = true; } }, 4500);
-  }
-
-  async function persist(){
-    if(!writable) return;
-    try{
-      document.getElementById('itemsData').textContent = JSON.stringify(items);
-      var html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-      var ns = await window.claude.use('artifact');
-      if(!ns){ setReadOnly(); return; }
-      await ns.publish(html);
-    }catch(e){
-      var code = e && e.code;
-      if(code === 'not_writer' || code === 'not_granted' || code === 'consent_required'){
-        setReadOnly();
-      }else{
-        showTempError();
-      }
-    }
+    save();
   }
 
   document.getElementById('addBtn').addEventListener('click', addItem);
   document.getElementById('newItem').addEventListener('keydown', function(e){ if(e.key === 'Enter') addItem(); });
 
-  renderList();
-  renderPrazos();
+  // Sincronização em tempo real: qualquer alteração (sua ou do cliente) atualiza a tela na hora
+  docRef.onSnapshot(function(snap){
+    items = (snap.exists && snap.data().items) ? snap.data().items : [];
+    renderList();
+    renderPrazos();
+  }, function(err){
+    showBanner('Não foi possível conectar ao banco de dados. Confira a configuração do Firebase.');
+  });
 })();
 </script>
-
-
-</body></html>
+</body>
+</html>
